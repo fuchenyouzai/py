@@ -1,0 +1,183 @@
+package com.github.catvod.bean.alist;
+
+import android.net.Uri;
+import android.text.TextUtils;
+
+import com.github.catvod.bean.Class;
+import com.github.catvod.net.Net;
+import com.github.catvod.utils.Util;
+import com.google.gson.Gson;
+import com.google.gson.annotations.SerializedName;
+import com.google.gson.reflect.TypeToken;
+
+import java.lang.reflect.Type;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+public class Drive {
+
+    @SerializedName("params")
+    private List<Param> params;
+    @SerializedName("login")
+    private Login login;
+    @SerializedName("name")
+    private String name;
+    @SerializedName("server")
+    private String server;
+    @SerializedName("version")
+    private int version;
+    @SerializedName("path")
+    private String path;
+    @SerializedName("token")
+    private String token;
+    @SerializedName("search")
+    private Boolean search;
+    @SerializedName("hidden")
+    private Boolean hidden;
+
+    private Drive() {
+    }
+
+    public static Drive create() {
+        return new Drive();
+    }
+
+    public static List<Drive> arrayFrom(String str) {
+        Type listType = TypeToken.getParameterized(List.class, Drive.class).getType();
+        return new Gson().fromJson(str, listType);
+    }
+
+    public List<Param> getParams() {
+        return params == null ? new ArrayList<>() : params;
+    }
+
+    public Login getLogin() {
+        return login;
+    }
+
+    public Drive name(String name) {
+        this.name = name;
+        return this;
+    }
+
+    public String getName() {
+        return TextUtils.isEmpty(name) ? "" : name;
+    }
+
+    public String getServer() {
+        return TextUtils.isEmpty(server) ? "" : server;
+    }
+
+    public int getVersion() {
+        return version;
+    }
+
+    public Drive version(int version) {
+        this.version = version;
+        return this;
+    }
+
+    public String getPath() {
+        return TextUtils.isEmpty(path) ? "" : path;
+    }
+
+    public Drive path(String path) {
+        this.path = TextUtils.isEmpty(path) ? "" : path;
+        return this;
+    }
+
+    public String getToken() {
+        return TextUtils.isEmpty(token) ? "" : token;
+    }
+
+    public Drive token(String token) {
+        this.token = token;
+        return this;
+    }
+
+    public Boolean search() {
+        return search == null || search;
+    }
+
+    public Boolean hidden() {
+        return hidden != null && hidden;
+    }
+
+    public boolean isNew() {
+        return getVersion() == 3;
+    }
+
+    public Class toType() {
+        return Class.create().id(getName()).name(getName()).flag("1");
+    }
+
+    public String getHost() {
+        return Uri.parse(getServer()).buildUpon().path(null).query(null).fragment(null).build().toString();
+    }
+
+    public String settingsApi() {
+        return getHost() + "/api/public/settings";
+    }
+
+    public String loginApi() {
+        return getHost() + "/api/auth/login";
+    }
+
+    public String listApi() {
+        return getHost() + (isNew() ? "/api/fs/list" : "/api/public/path");
+    }
+
+    public String getApi() {
+        return getHost() + (isNew() ? "/api/fs/get" : "/api/public/path");
+    }
+
+    public String searchApi() {
+        return getHost() + (isNew() ? "/api/fs/search" : "/api/public/search");
+    }
+
+    public Drive check(Net net) {
+        if (path == null) path(Uri.parse(getServer()).getPath());
+        if (version == 0) version(net.get(settingsApi()).contains("v2.") ? 2 : 3);
+        return this;
+    }
+
+    public String params(String keyword, int page, int limit) {
+        if (isNew()) {
+            Map<String, Object> params = new HashMap<>();
+            params.put("keywords", keyword);
+            params.put("page", page);
+            params.put("parent", "/");
+            params.put("per_page", limit);
+            params.put("scope", 0);
+            params.put("password", findPass("/"));
+            return new Gson().toJson(params);
+        } else {
+            Map<String, Object> params = new HashMap<>();
+            params.put("keyword", keyword);
+            params.put("path", "/");
+            return new Gson().toJson(params);
+        }
+    }
+
+    public HashMap<String, String> getHeader() {
+        HashMap<String, String> headers = new HashMap<>();
+        headers.put("User-Agent", Util.CHROME);
+        if (!getToken().isEmpty()) headers.put("Authorization", token);
+        return headers;
+    }
+
+    public String findPass(String path) {
+        for (Param param : getParams()) if (path.startsWith(param.getPath())) return param.getPass();
+        return "";
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) return true;
+        if (!(obj instanceof Drive)) return false;
+        Drive it = (Drive) obj;
+        return getName().equals(it.getName());
+    }
+}
