@@ -1,6 +1,6 @@
 # CatVodSpider
 
-TV 的 Java、Python 与 QuickJS 爬虫及范例，基于 [CatVod](https://github.com/CatVodTVOfficial/CatVodTVSpider)。
+影视TV app版本号5.8.4和5.8.3版本的 Java、Python 与 QuickJS 爬虫及范例
 
 ## 开始开发
 
